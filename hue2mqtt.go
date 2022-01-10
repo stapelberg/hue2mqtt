@@ -52,6 +52,8 @@ func (lc *lightController) command(room, command string, desired huego.State) er
 	groupId := 1
 	if room == "bedroom" {
 		groupId = 2
+	} else if room == "kitchen" {
+		groupId = 4
 	}
 
 	switch command {
