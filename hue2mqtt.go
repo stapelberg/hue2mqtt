@@ -33,10 +33,6 @@ var (
 		"github.com/stapelberg/hue2mqtt/",
 		"MQTT topic prefix")
 
-	hueHost = flag.String("hue_host",
-		"Philips-Hue",
-		"hostname (or IP address) to reach your Philips Hue bridge")
-
 	hueKey = flag.String("hue_key",
 		os.Getenv("HUE_KEY"),
 		"secret key for communicating with your local Philips Hue bridge, see https://developers.meethue.com/develop/get-started-2/ for how to generate one")
@@ -158,7 +154,13 @@ func subscribe(mqttClient mqtt.Client, topic string, hdl mqtt.MessageHandler) er
 
 func hue2mqtt() error {
 	// TODO: can we do extremely long keep-alive for an already-established connection?
-	bridge := huego.New(*hueHost, *hueKey)
+	log.Printf("discovering bridge")
+	bridge, err := huego.Discover()
+	if err != nil {
+		return err
+	}
+	log.Printf("discovered: %s", bridge.Host)
+	bridge.User = *hueKey
 	lc := &lightController{
 		bridge: bridge,
 		on:     make(map[string]bool),
@@ -188,7 +190,7 @@ func hue2mqtt() error {
 	trace.AuthRequest = func(req *http.Request) (any, sensitive bool) { return true, true }
 
 	// Read events via the Hue API v2 eventsource protocol
-	req, err := http.NewRequest("GET", "https://"+*hueHost+"/eventstream/clip/v2", nil)
+	req, err := http.NewRequest("GET", "https://"+bridge.Host+"/eventstream/clip/v2", nil)
 	if err != nil {
 		return err
 	}
