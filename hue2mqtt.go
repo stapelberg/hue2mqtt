@@ -43,6 +43,25 @@ type lightController struct {
 	on     map[string]bool
 }
 
+func (lc *lightController) visualbell(lightId int, desired huego.State) error {
+	l, err := lc.bridge.GetLight(lightId)
+	if err != nil {
+		return err
+	}
+	old := huego.State{
+		Hue: l.State.Hue,
+		On:  l.State.On,
+	}
+	log.Printf("light %d, set visualbell=%+v", lightId, desired)
+	lc.bridge.SetLightState(lightId, desired)
+	go func() {
+		time.Sleep(2 * time.Second)
+		log.Printf("light %d, revert to old=%+v", lightId, old)
+		lc.bridge.SetLightState(lightId, old)
+	}()
+	return nil
+}
+
 func (lc *lightController) command(room, command string, desired huego.State) error {
 	// TODO: map room name to group ids
 	groupId := 1
@@ -63,10 +82,26 @@ func (lc *lightController) command(room, command string, desired huego.State) er
 
 	case "toggle":
 		desired.On = !lc.on[fmt.Sprintf("/groups/%d", groupId)]
+
+	case "visualbell":
+		desired.On = true
+		lightId := 5
+		switch room {
+		case "living":
+			lightId = 5
+		case "kitchen":
+			lightId = 7
+		default:
+			return nil
+		}
+		return lc.visualbell(lightId, desired)
+
+	default:
+		log.Printf("unknown command: %q", command)
+		return fmt.Errorf("unknown command: %q", command)
 	}
 
 	log.Printf("room %q, set on=%v, bri=%v", room, desired.On, desired.Bri)
-
 	lc.bridge.SetGroupStateContext(context.Background(), groupId, desired)
 
 	return nil
@@ -265,6 +300,14 @@ func hue2mqtt() error {
 			// b is a percentage, i.e. [0, 100].
 			// bri is an uint8, i.e. [0, 254].
 			desired.Bri = uint8(254 * (float64(b) / 100))
+		}
+		if hue := r.FormValue("hue"); hue != "" {
+			b, err := strconv.ParseInt(hue, 0, 64)
+			if err != nil {
+				log.Print(err)
+				return
+			}
+			desired.Hue = uint16(b)
 		}
 		if err := lc.command(room, command, desired); err != nil {
 			log.Print(err)
