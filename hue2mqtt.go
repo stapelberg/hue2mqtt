@@ -102,7 +102,8 @@ func (lc *lightController) command(room, command string, desired huego.State) er
 	}
 
 	log.Printf("room %q, set on=%v, bri=%v", room, desired.On, desired.Bri)
-	lc.bridge.SetGroupStateContext(context.Background(), groupId, desired)
+	resp, err := lc.bridge.SetGroupStateContext(context.Background(), groupId, desired)
+	log.Printf("resp: %+v, err = %v", resp, err)
 
 	return nil
 }
@@ -113,7 +114,7 @@ func (lc *lightController) eventMessageHandler(_ mqtt.Client, m mqtt.Message) {
 	var groupState struct {
 		ID   string `json:"id"`
 		IDv1 string `json:"id_v1"`
-		On   struct {
+		On   *struct {
 			On bool `json:"on"`
 		} `json:"on"`
 		Type string `json:"type"`
@@ -122,7 +123,9 @@ func (lc *lightController) eventMessageHandler(_ mqtt.Client, m mqtt.Message) {
 		log.Print(err)
 		return
 	}
-	lc.on[groupState.IDv1] = groupState.On.On
+	if groupState.On != nil {
+		lc.on[groupState.IDv1] = groupState.On.On
+	}
 
 	log.Printf("lc.on = %+v", lc.on)
 }
