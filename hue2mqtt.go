@@ -71,6 +71,8 @@ func (lc *lightController) command(room, command string, desired huego.State) er
 		groupId = 3
 	} else if room == "kitchen" {
 		groupId = 4
+	} else if room == "all" {
+		groupId = 0 // https://stackoverflow.com/a/31712275/712014
 	}
 
 	switch command {
