@@ -51,6 +51,7 @@ func (lc *lightController) visualbell(lightId int, desired huego.State) error {
 	old := huego.State{
 		Hue: l.State.Hue,
 		On:  l.State.On,
+		Sat: l.State.Sat,
 	}
 	log.Printf("light %d, set visualbell=%+v", lightId, desired)
 	lc.bridge.SetLightState(lightId, desired)
