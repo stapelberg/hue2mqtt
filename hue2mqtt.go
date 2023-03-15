@@ -307,6 +307,16 @@ func hue2mqtt() error {
 			// bri is an uint8, i.e. [0, 254].
 			desired.Bri = uint8(254 * (float64(b) / 100))
 		}
+		if sat := r.FormValue("sat"); sat != "" {
+			b, err := strconv.ParseInt(sat, 0, 64)
+			if err != nil {
+				log.Print(err)
+				return
+			}
+			// b is a percentage, i.e. [0, 100].
+			// Sat is an uint8, i.e. [0, 254].
+			desired.Sat = uint8(254 * (float64(b) / 100))
+		}
 		if hue := r.FormValue("hue"); hue != "" {
 			b, err := strconv.ParseInt(hue, 0, 64)
 			if err != nil {
