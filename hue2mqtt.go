@@ -267,7 +267,7 @@ func hue2mqtt() error {
 			return err
 		}
 		for _, l := range lights {
-			log.Printf("light: %+v", l)
+			log.Printf("light: %+v (state: %+v)", l, l.State)
 		}
 
 		groups, err := bridge.GetGroups()
